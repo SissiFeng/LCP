@@ -1,0 +1,25 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Copy requirements file
+COPY requirements.txt .
+
+# Install dependencies using uv
+RUN uv pip install -r requirements.txt
+
+# Copy application code
+COPY lcp_fake_device ./lcp_fake_device
+
+# Expose port
+EXPOSE 8000
+
+# Set environment variables
+ENV LCP_FAKE_HOST=0.0.0.0
+ENV LCP_FAKE_PORT=8000
+
+# Run the application
+CMD ["python", "-m", "uvicorn", "lcp_fake_device.main:app", "--host", "0.0.0.0", "--port", "8000"] 

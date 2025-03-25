@@ -1,0 +1,156 @@
+# Temperature Controller Device Manifest
+# Version: 1.0.0
+
+device_info:
+  name: "LCP Temperature Controller"
+  manufacturer: "LCP Examples"
+  model: "TC-100"
+  category: "thermal_control"
+  version: "1.0.0"
+  lcp_version: "1.0.0"
+
+communication:
+  protocols:
+    - type: "rest"
+      role: "primary"
+      config:
+        base_url: "http://localhost:8080"
+        auth_method: "bearer"
+    - type: "mqtt"
+      role: "events"
+      config:
+        broker: "mqtt://localhost:1883"
+        topics:
+          status: "device/tc-100/status"
+          data: "device/tc-100/data"
+          error: "device/tc-100/error"
+
+commands:
+  standard:
+    - name: "start"
+      implemented: true
+      parameters:
+        - name: "target_temperature"
+          type: "number"
+          required: true
+          description: "Target temperature in Celsius"
+          validation:
+            min: 4.0
+            max: 95.0
+    - name: "stop"
+      implemented: true
+      parameters: []
+    - name: "status"
+      implemented: true
+      parameters: []
+    - name: "reset"
+      implemented: true
+      parameters: []
+  
+  custom:
+    - name: "calibrate"
+      description: "Calibrate temperature sensor"
+      parameters:
+        - name: "reference_temperature"
+          type: "number"
+          required: true
+          description: "Known reference temperature for calibration"
+          validation:
+            min: 4.0
+            max: 95.0
+
+capabilities:
+  features:
+    - name: "temperature_control"
+      parameters:
+        - name: "temperature_range"
+          type: "object"
+          properties:
+            min:
+              type: "number"
+              unit: "celsius"
+              value: 4.0
+            max:
+              type: "number"
+              unit: "celsius"
+              value: 95.0
+        - name: "temperature_resolution"
+          type: "number"
+          unit: "celsius"
+          value: 0.1
+        - name: "heating_rate"
+          type: "number"
+          unit: "celsius_per_second"
+          value: 1.0
+        - name: "cooling_rate"
+          type: "number"
+          unit: "celsius_per_second"
+          value: 0.5
+
+status:
+  states:
+    - name: "idle"
+      description: "Device is ready for temperature control"
+    - name: "running"
+      description: "Device is actively controlling temperature"
+    - name: "error"
+      description: "Device encountered an error"
+    - name: "calibrating"
+      description: "Device is performing calibration"
+  parameters:
+    - name: "current_temperature"
+      type: "number"
+      unit: "celsius"
+    - name: "target_temperature"
+      type: "number"
+      unit: "celsius"
+    - name: "heating"
+      type: "boolean"
+    - name: "cooling"
+      type: "boolean"
+
+errors:
+  categories:
+    - name: "hardware_error"
+      codes:
+        - code: "E001"
+          message: "Temperature sensor failure"
+        - code: "E002"
+          message: "Heater malfunction"
+        - code: "E003"
+          message: "Cooling system malfunction"
+    - name: "validation_error"
+      codes:
+        - code: "E101"
+          message: "Invalid temperature value"
+        - code: "E102"
+          message: "Temperature out of range"
+
+data_formats:
+  - type: "measurement"
+    format:
+      timestamp: "string"
+      temperature: "number"
+      unit: "string"
+      metadata:
+        type: "object"
+        properties:
+          heating: "boolean"
+          cooling: "boolean"
+          target_temperature: "number"
+
+required_files:
+  - path: "lcp_interface.py"
+    description: "Temperature controller LCP implementation"
+  - path: "tests/test_lcp_interface.py"
+    description: "Implementation tests"
+  - path: "README.md"
+    description: "Device documentation"
+
+validation:
+  required_test_coverage: 80
+  required_tests:
+    - "test_standard_commands"
+    - "test_temperature_control"
+    - "test_error_handling"
+    - "test_status_reporting" 

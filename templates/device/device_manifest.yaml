@@ -1,0 +1,155 @@
+# LCP Device Manifest Template
+# Version: 1.0.0
+# This manifest describes the device's LCP compliance specifications
+
+# Basic device information
+device_info:
+  name: "Example Device"                    # Human readable device name
+  manufacturer: "Example Manufacturer"       # Device manufacturer
+  model: "Model-X1"                         # Model number/name
+  category: "liquid_handling"               # Device category from LCP standard categories
+  version: "1.0.0"                         # Device driver version
+  lcp_version: "1.0.0"                     # LCP version this device complies with
+
+# Communication specifications
+communication:
+  protocols:
+    - type: "rest"                         # Primary protocol (rest/mqtt/websocket/grpc)
+      role: "primary"
+      config:
+        base_url: "http://localhost:8080"  # Base URL for REST API
+        auth_method: "bearer"              # Authentication method
+    - type: "mqtt"                         # Secondary protocol (optional)
+      role: "events"
+      config:
+        broker: "mqtt://localhost:1883"
+        topics:
+          status: "device/status"
+          data: "device/data"
+          error: "device/error"
+
+# Supported commands
+commands:
+  # Standard LCP commands implementation
+  standard:
+    - name: "start"
+      implemented: true
+      parameters:
+        - name: "protocol_file"
+          type: "string"
+          required: true
+          description: "Path to the protocol file"
+    - name: "stop"
+      implemented: true
+      parameters: []
+    - name: "status"
+      implemented: true
+      parameters: []
+    - name: "reset"
+      implemented: true
+      parameters: []
+    
+  # Device-specific commands
+  custom:
+    - name: "load_samples"
+      description: "Load samples into device"
+      parameters:
+        - name: "positions"
+          type: "array"
+          required: true
+          description: "Array of sample positions"
+          items:
+            type: "object"
+            properties:
+              position: "string"
+              sample_id: "string"
+
+# Device capabilities
+capabilities:
+  features:
+    - name: "liquid_handling"
+      parameters:
+        - name: "min_volume"
+          type: "number"
+          unit: "ul"
+          value: 1.0
+        - name: "max_volume"
+          type: "number"
+          unit: "ul"
+          value: 1000.0
+        - name: "channels"
+          type: "number"
+          value: 8
+    - name: "temperature_control"
+      parameters:
+        - name: "temperature_range"
+          type: "object"
+          properties:
+            min: 
+              type: "number"
+              unit: "celsius"
+              value: 4.0
+            max:
+              type: "number"
+              unit: "celsius"
+              value: 95.0
+
+# Status reporting
+status:
+  states:
+    - name: "idle"
+      description: "Device is ready for commands"
+    - name: "running"
+      description: "Device is executing a command"
+    - name: "error"
+      description: "Device encountered an error"
+  parameters:
+    - name: "current_temperature"
+      type: "number"
+      unit: "celsius"
+    - name: "door_open"
+      type: "boolean"
+
+# Error handling
+errors:
+  categories:
+    - name: "hardware_error"
+      codes:
+        - code: "E001"
+          message: "Motor movement error"
+        - code: "E002"
+          message: "Temperature control error"
+    - name: "validation_error"
+      codes:
+        - code: "E101"
+          message: "Invalid parameter value"
+
+# Data formats
+data_formats:
+  - type: "measurement"
+    format:
+      timestamp: "string"
+      value: "number"
+      unit: "string"
+      metadata:
+        type: "object"
+        properties:
+          position: "string"
+          sample_id: "string"
+
+# Required files
+required_files:
+  - path: "lcp_interface.py"
+    description: "Main LCP interface implementation"
+  - path: "tests/test_lcp_interface.py"
+    description: "LCP interface tests"
+  - path: "README.md"
+    description: "Device documentation"
+
+# Validation requirements
+validation:
+  required_test_coverage: 80
+  required_tests:
+    - "test_standard_commands"
+    - "test_error_handling"
+    - "test_status_reporting" 

@@ -1,0 +1,230 @@
+# LCP (Laboratory Context Protocol)
+
+LCP (Laboratory Context Protocol) is a technical protocol our team is developing to address the **isolation between laboratory instruments and data processing systems** in experimental automation.  
+
+In traditional lab environments, researchers often manually operate instruments and rely on **standalone control software** for data acquisition and processing. This approach is not only inefficient but also prone to **data transfer errors** and **repetitive experiments**. The goal of LCP is to **define a universal communication protocol** that enables laboratory instruments to interact seamlessly with data analysis systems, multi-objective optimization (MO) algorithms, databases, and remote computing environments, thereby enhancing experimental automation and data management efficiency.  
+
+## **Key Features of LCP:**  
+- **Instrument Connectivity** – Standardized integration of various laboratory devices (e.g., sensors, robots, analytical instruments).  
+- **Data Stream Management** – Supports real-time data transmission in a standardized format to databases or processing pipelines.  
+- **Multi-Objective Optimization Integration** – Seamlessly connects with MO algorithms to enable intelligent parameter adjustments.  
+- **Extensibility** – Designed as an **open standard**, allowing developers to expand support for new instruments, optimization methods, and analytical tools.  
+
+LCP is currently being integrated with the **Canvas system** (built on React Flow), aiming to create an **end-to-end experimental automation solution** that allows researchers to **design experiments like writing code** while optimizing workflows using intelligent algorithms.  
+
+Although LCP originated from our efforts in **experimental automation**, it is designed to be **a general-purpose protocol**, applicable to **various smart laboratories and automated research platforms**. Developers can extend LCP to support new experimental environments and applications based on their research needs.  
+
+
+新模式（JSON-RPC/stdin）：
+
+状态隔离更好：每个 LCP Server 运行独立的进程，与设备的生命周期绑定，不会因网络波动影响 Canvas 逻辑。
+更适合多工作流管理：标准化的 JSON-RPC 格式支持更细粒度的请求标识，可结合 workflow_id 进行追踪。
+兼容性高：能够逐步迁移，Canvas 现有 HTTP/MQTT 结构仍然能继续工作。
+降低外部 API 依赖：减少 HTTP 开销，直接与 LCP 进程通信，适用于本地仪器或远程集群。
+
+LCP的核心价值在于标准化和抽象。
+
+### 一、标准接口协议层（Protocol Layer）
+
+1. **统一控制指令集**
+   ```javascript
+   // 所有设备都应该支持的基础指令
+   const BASE_COMMANDS = {
+     START: 'start',           // 启动设备/实验
+     STOP: 'stop',            // 停止设备/实验
+     CONFIGURE: 'configure',   // 配置设备参数
+     STATUS: 'status',        // 获取设备状态
+     RESET: 'reset',          // 重置设备
+     CALIBRATE: 'calibrate'   // 校准设备
+   }
+   ```
+
+2. **标准状态定义**
+   ```javascript
+   const DEVICE_STATES = {
+     IDLE: 'idle',           // 空闲状态
+     RUNNING: 'running',     // 运行中
+     ERROR: 'error',         // 错误状态
+     MAINTENANCE: 'maintenance', // 维护状态
+     CALIBRATING: 'calibrating' // 校准中
+   }
+   ```
+
+### 二、设备控制抽象层（Abstraction Layer）
+
+1. **设备类型分类**
+   ```javascript
+   const DEVICE_CATEGORIES = {
+     LIQUID_HANDLING: 'liquid_handling',   // 液体处理设备
+     THERMAL_CONTROL: 'thermal_control',   // 温控设备
+     MEASUREMENT: 'measurement',           // 测量设备
+     SEPARATION: 'separation',             // 分离设备
+     IMAGING: 'imaging'                    // 成像设备
+   }
+   ```
+
+2. **标准化接入步骤**：
+
+```javascript
+// 1. 设备描述文件 (device-descriptor.json)
+{
+  "device_type": "thermal_cycler",
+  "category": "THERMAL_CONTROL",
+  "capabilities": [
+    "temperature_control",
+    "program_execution",
+    "data_logging"
+  ],
+  "parameters": {
+    "temperature": {
+      "type": "number",
+      "range": [-20, 100],
+      "unit": "celsius"
+    },
+    "duration": {
+      "type": "number",
+      "unit": "seconds"
+    }
+  }
+}
+
+// 2. 设备适配器模板
+class DeviceAdapter {
+  async initialize() {}
+  async start(params) {}
+  async stop() {}
+  async getStatus() {}
+  async configure(settings) {}
+  async getData() {}
+}
+```
+
+### 三、标准化流程
+
+1. **设备接入流程**
+   - 定义设备描述文件
+   - 实现标准接口适配
+   - 配置通信协议
+   - 验证兼容性
+
+2. **数据标准化**
+   ```javascript
+   // 标准数据格式
+   {
+     "timestamp": "ISO8601",
+     "device_id": "unique_id",
+     "type": "measurement|status|error",
+     "data": {
+       "value": number,
+       "unit": "string",
+       "metadata": {}
+     }
+   }
+   ```
+
+### 四、实施建议
+
+1. **模块化接入包**
+   - 提供标准SDK
+   - 设备适配器模板
+   - 验证工具集
+   - 示例实现
+
+2. **文档标准化**
+   ```markdown
+   # 设备接入文档模板
+   1. 设备基本信息
+   2. 支持的指令集
+   3. 参数规范
+   4. 数据格式
+   5. 错误处理
+   6. 示例代码
+   ```
+
+3. **验证清单**
+   - 基础指令集支持
+   - 数据格式符合性
+   - 错误处理机制
+   - 性能指标
+   - 安全要求
+
+### 五、扩展性考虑
+
+1. **自定义能力**
+   ```javascript
+   // 设备特定功能扩展
+   {
+     "custom_capabilities": {
+       "name": "special_function",
+       "parameters": {},
+       "returns": {}
+     }
+   }
+   ```
+
+2. **版本兼容**
+   - 协议版本控制
+   - 向后兼容策略
+   - 升级机制
+
+这样的标准化架构能够：
+1. 统一控制接口，降低学习成本
+2. 支持模拟和真实设备无缝切换
+3. 实现即插即用的设备管理
+4. 简化运维和调试流程
+5. 保持足够的扩展性
+
+非技术的方式解释LCP（实验室通信协议）：
+
+### 通俗解释
+
+想象一下实验室里的情况：
+1. **多种仪器设备**：
+   - 温控器、显微镜、分析仪等各种设备
+   - 每个设备都有自己的"语言"（通信方式）
+   - 操作方式各不相同
+
+2. **LCP就像一个"万能翻译官"**：
+   - 统一了与所有设备的"对话方式"
+   - 让不同品牌、不同类型的设备能够"听懂"同样的指令
+   - 让实验室管理变得更简单
+
+### 生活中的类比
+
+就像：
+1. **万能遥控器**：
+   - 一个遥控器可以控制电视、空调、音响等多个设备
+   - 不需要记住每个设备的专用遥控器怎么用
+
+2. **或者像手机的通用充电器**：
+   - 以前每个品牌都有自己的充电接口
+   - 现在统一用Type-C，方便多了
+
+### LCP的主要功能
+
+1. **统一控制**：
+   - 用同样的方式发送"开始"、"停止"、"获取数据"等指令
+   - 不需要记住每个设备的特殊操作方式
+
+2. **数据整合**：
+   - 所有设备的数据都用统一的格式保存
+   - 便于后续分析和管理
+
+3. **错误处理**：
+   - 统一的错误提示和处理方式
+   - 更容易发现和解决问题
+
+### 实际应用场景
+
+比如在一个实验室：
+1. **自动化实验**：
+   - 多个设备按顺序自动完成实验
+   - 不需要人工切换操作不同设备
+
+2. **远程控制**：
+   - 可以远程监控所有设备的状态
+   - 随时调整实验参数
+
+3. **数据收集**：
+   - 自动记录所有设备的数据
+   - 生成统一格式的实验报告
